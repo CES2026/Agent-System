@@ -38,6 +38,9 @@ class AgentState(TypedDict):
     # 当前处理状态
     processing_state: str  # "idle", "listening", "processing", "responding"
 
+    # 工具调用历史（可选，用于调试）
+    tool_calls: Optional[list[dict]]
+
 
 class BaseAgent:
     """Agent 基类"""
@@ -155,7 +158,8 @@ def create_initial_state(
         session_id=session_id,
         user_id=user_id,
         error=None,
-        processing_state="idle"
+        processing_state="idle",
+        tool_calls=None
     )
 
 

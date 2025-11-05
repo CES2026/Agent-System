@@ -52,8 +52,21 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 2000
     llm_streaming: bool = True
 
+    # MCP 配置
+    enable_mcp_navigation: bool = True
+    mcp_server_module: str = "backend.mcp_servers"
+    mcp_connection_timeout: float = 10.0
+    mcp_tool_call_timeout: float = 30.0
+    mcp_heartbeat_interval: float = 30.0
+    mcp_heartbeat_timeout: float = 5.0
+    mcp_heartbeat_max_failures: int = 3
+
+    # Sonnet 配置（用于NavigationTool内部命令解析）
+    navigation_command_parser_model: str = "anthropic/claude-sonnet-4.5:beta"
+
     # 日志配置
     log_level: str = "INFO"
+    log_level_mcp: str = "INFO"
 
     class Config:
         env_file = ".env"

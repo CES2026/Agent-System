@@ -107,46 +107,65 @@ class OpenRouterService:
             logger.error(f"Error generating streaming response: {e}")
             raise
 
-    async def generate_with_conversation_history(
+    async def generate_with_conversation_history_streaming(
         self,
         messages: list[Dict[str, str]],
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        stream: bool = True,
-    ) -> AsyncGenerator[str, None] | str:
+    ) -> AsyncGenerator[str, None]:
         """
-        根据对话历史生成响应
+        根据对话历史生成流式响应
 
         Args:
             messages: 对话历史列表 [{"role": "user", "content": "..."}, ...]
             temperature: 温度参数
             max_tokens: 最大 token 数
-            stream: 是否流式返回
 
-        Returns:
-            流式生成器或完整响应文本
+        Yields:
+            响应文本的增量片段
         """
         try:
-            if stream:
-                stream_response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=temperature or self.settings.llm_temperature,
-                    max_tokens=max_tokens or self.settings.llm_max_tokens,
-                    stream=True,
-                )
+            stream_response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature or self.settings.llm_temperature,
+                max_tokens=max_tokens or self.settings.llm_max_tokens,
+                stream=True,
+            )
 
-                async for chunk in stream_response:
-                    if chunk.choices[0].delta.content:
-                        yield chunk.choices[0].delta.content
-            else:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=temperature or self.settings.llm_temperature,
-                    max_tokens=max_tokens or self.settings.llm_max_tokens,
-                )
-                return response.choices[0].message.content
+            async for chunk in stream_response:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+
+        except Exception as e:
+            logger.error(f"Error generating streaming response with history: {e}")
+            raise
+
+    async def generate_with_conversation_history(
+        self,
+        messages: list[Dict[str, str]],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> str:
+        """
+        根据对话历史生成响应（非流式）
+
+        Args:
+            messages: 对话历史列表 [{"role": "user", "content": "..."}, ...]
+            temperature: 温度参数
+            max_tokens: 最大 token 数
+
+        Returns:
+            完整响应文本
+        """
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature or self.settings.llm_temperature,
+                max_tokens=max_tokens or self.settings.llm_max_tokens,
+            )
+            return response.choices[0].message.content
 
         except Exception as e:
             logger.error(f"Error generating response with history: {e}")
